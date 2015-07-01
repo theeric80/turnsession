@@ -49,10 +49,17 @@ class TurnSession(object):
             _, self._relayed_port, self._relayed_address = xaddr_to_addr(
                     *response.get_attribute(STUN_ATTR_XOR_RELAYED_ADDRESS))
 
+            self.allocation_lifetime = response.get_attribute(
+                    STUN_ATTR_LIFETIME)[0]
+
         return response
 
     def refresh(self):
-        pass
+        response = self._send_request(self._build_refresh_request())
+        if response.succeeded():
+            self.allocation_lifetime = response.get_attribute(
+                    STUN_ATTR_LIFETIME)[0]
+        return response
 
     def create_permission(self):
         return self._send_request(self._build_create_permission_request())
@@ -101,7 +108,11 @@ class TurnSession(object):
                 STUN_REQUESTED_TRANSPORT_UDP<<24)
         if self.dont_fragment:
             req.add_attribute(STUN_ATTR_DONT_FRAGMENT)
+        return req
 
+    def _build_refresh_request(self):
+        req = self._create_stun_request(STUN_METHOD_REFRESH)
+        req.add_attribute(STUN_ATTR_LIFETIME, self.allocation_lifetime)
         return req
 
     def _build_create_permission_request(self):

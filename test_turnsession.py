@@ -30,6 +30,10 @@ def main():
         print 'STUN_METHOD_CHANNEL_BIND'
         response = session.bind_channel(STUN_MIN_CHANNEL_NUMBER)
         assert(response.succeeded())
+
+        print 'STUN_METHOD_REFRESH'
+        response = session.refresh()
+        assert(response.succeeded())
     except:
         traceback.print_exc()
     finally:
