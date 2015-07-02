@@ -1,7 +1,21 @@
 import traceback
+import time
+import base64
+import hmac
+import hashlib
 from stundef import *
 from stunconn import  SocketConnection
 from stunsession import TurnSession
+
+def build_ephemeral_credential(ttl, secret, uname):
+    now = time.time()
+    timestamp = int(now + ttl)
+    _uname = '{0}:{1}'.format(timestamp, uname)
+
+    key = secret.encode('utf8')
+    msg = _uname.encode('utf8')
+    _passwd = base64.b64encode(hmac.new(key, msg, hashlib.sha1).digest())
+    return _uname, _passwd
 
 def main():
     jp02_turn_001 = '52.68.154.117'
@@ -12,6 +26,12 @@ def main():
     session.transport_proto = STUN_TRANSPORT_PROTO_TCP
     session.username = 'ninefingers'
     session.password = 'youhavetoberealistic'
+
+    use_ephemeral_credential = True
+    if use_ephemeral_credential:
+        ttl, secret = 86400, 'logen'
+        session.username, session.password = \
+                build_ephemeral_credential(ttl, secret, session.username)
 
     session.connect()
 
