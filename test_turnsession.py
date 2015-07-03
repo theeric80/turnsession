@@ -17,13 +17,33 @@ def build_ephemeral_credential(ttl, secret, uname):
     _passwd = base64.b64encode(hmac.new(key, msg, hashlib.sha1).digest())
     return _uname, _passwd
 
+def test_session(session):
+    print 'STUN_METHOD_ALLOCATE'
+    response = session.allocate()
+    assert(response.succeeded())
+
+    print 'Relayed X-ADDRESS: {0}:{1}'.format(
+            session._relayed_address, session._relayed_port)
+
+    print 'STUN_METHOD_CREATE_PERMISSION'
+    response = session.create_permission()
+    assert(response.succeeded())
+
+    print 'STUN_METHOD_CHANNEL_BIND'
+    response = session.bind_channel(STUN_MIN_CHANNEL_NUMBER)
+    assert(response.succeeded())
+
+    print 'STUN_METHOD_REFRESH'
+    response = session.refresh()
+    assert(response.succeeded())
+
 def main():
     jp02_turn_001 = '52.68.154.117'
 
     conn = SocketConnection()
     session = TurnSession(conn)
     session.server_address = jp02_turn_001
-    session.transport_proto = STUN_TRANSPORT_PROTO_UDP
+    session.server_port = 3478
     session.username = 'ninefingers'
     session.password = 'youhavetoberealistic'
 
@@ -33,27 +53,17 @@ def main():
         session.username, session.password = \
                 build_ephemeral_credential(ttl, secret, session.username)
 
-    session.connect()
-
     try:
-        print 'STUN_METHOD_ALLOCATE'
-        response = session.allocate()
-        assert(response.succeeded())
+        print 'STUN_TRANSPORT_PROTO_UDP'
+        session.transport_proto = STUN_TRANSPORT_PROTO_UDP
+        session.connect()
+        test_session(session)
 
-        print 'Relayed X-ADDRESS: {0}:{1}'.format(
-                session._relayed_address, session._relayed_port)
-
-        print 'STUN_METHOD_CREATE_PERMISSION'
-        response = session.create_permission()
-        assert(response.succeeded())
-
-        print 'STUN_METHOD_CHANNEL_BIND'
-        response = session.bind_channel(STUN_MIN_CHANNEL_NUMBER)
-        assert(response.succeeded())
-
-        print 'STUN_METHOD_REFRESH'
-        response = session.refresh()
-        assert(response.succeeded())
+        print '\nSTUN_TRANSPORT_PROTO_TCP'
+        session.close()
+        session.transport_proto = STUN_TRANSPORT_PROTO_TCP
+        session.connect()
+        test_session(session)
     except:
         traceback.print_exc()
     finally:
