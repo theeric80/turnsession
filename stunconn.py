@@ -23,5 +23,6 @@ class SocketConnection(object):
     def send(self, string):
         self._sock.sendall(string)
 
-    def recv(self, bufsize):
-        return self._sock.recv(bufsize)
+    def recv(self, bufsize=0):
+        # TODO: bufsize
+        return self._sock.recv(65535)

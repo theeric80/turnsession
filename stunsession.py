@@ -1,5 +1,5 @@
 from stundef import *
-from stunmsg import StunRequest, StunResponse, get_message_len
+from stunmsg import StunRequest, StunResponse
 from stunutils import xaddr_to_addr, addr_to_xaddr
 
 class TurnSession(object):
@@ -86,10 +86,9 @@ class TurnSession(object):
         return response
 
     def _recv_response(self):
-        header = self._conn.recv(STUN_HEADER_LENGTH)
-        length = get_message_len(header)
-
-        attributes = self._conn.recv(length)
+        buff = self._conn.recv()
+        header_len = STUN_HEADER_LENGTH
+        header, attributes = buff[:header_len], buff[header_len:]
         return StunResponse(header, attributes)
 
     def _create_stun_request(self, method):

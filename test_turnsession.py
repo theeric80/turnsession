@@ -23,7 +23,7 @@ def main():
     conn = SocketConnection()
     session = TurnSession(conn)
     session.server_address = jp02_turn_001
-    session.transport_proto = STUN_TRANSPORT_PROTO_TCP
+    session.transport_proto = STUN_TRANSPORT_PROTO_UDP
     session.username = 'ninefingers'
     session.password = 'youhavetoberealistic'
 

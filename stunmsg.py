@@ -67,9 +67,6 @@ def get_method_by_type(msg_type):
     METHOD_MASK = 0b1111111011101111
     return msg_type & METHOD_MASK
 
-def get_message_len(header):
-    return unpack_header(header)[1]
-
 def pack_header(method, length, tid):
     # TODO: logging
     data = struct.pack(
