@@ -28,8 +28,18 @@ class TurnSession(object):
         self._conn = connection
 
     def close(self):
+        self._reset()
         if self._conn:
             self._conn.close()
+
+    def _reset(self):
+        self.allocation_lifetime = STUN_DEFAULT_ALLOCATE_LIFETIME
+
+        self._relayed_address = ''
+        self._relayed_port = 0
+
+        self._realm = ''
+        self._nonce = ''
 
     def connect(self):
         self._conn.connect(
