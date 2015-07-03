@@ -55,15 +55,15 @@ def _zpad(data, boundary):
     size = _zpadsize(len(data), boundary)
     return data + (b'\x00'*size)
 
-def msg_integrity_len():
+def _msg_integrity_len():
     attr = _STUN_ATTR_FMT[STUN_ATTR_MESSAGE_INTEGRITY]
     return _STUN_ATTR_HEADER_LENGTH + struct.calcsize(attr)
 
-def get_class_by_type(msg_type):
+def _get_class_by_type(msg_type):
     CLASS_MASK = 0b0000000100010000
     return msg_type & CLASS_MASK
 
-def get_method_by_type(msg_type):
+def _get_method_by_type(msg_type):
     METHOD_MASK = 0b1111111011101111
     return msg_type & METHOD_MASK
 
@@ -127,7 +127,7 @@ class StunRequest(object):
         body_len = len(body)
 
         if self._has_realm():
-            hdr = self._pack_header(body_len + msg_integrity_len())
+            hdr = self._pack_header(body_len + _msg_integrity_len())
             body += self._pack_message_integrity(hdr + body)
         else:
             hdr = self._pack_header(body_len)
@@ -165,8 +165,8 @@ class StunResponse(object):
     def __init__(self, header, attributes):
         object.__init__(self)
         msg_type, _, _, _ = unpack_header(header)
-        self.class_ = get_class_by_type(msg_type)
-        self.method = get_method_by_type(msg_type)
+        self.class_ = _get_class_by_type(msg_type)
+        self.method = _get_method_by_type(msg_type)
         self._attributes = {}
 
         self._build(attributes)
