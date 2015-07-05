@@ -7,7 +7,7 @@ from functools import partial
 from saslPrep import saslPrep
 from stundef import *
 
-_STUN_HEADER_FMT = '!H H L 12s'
+_STUN_HEADER_FMT = '!H H I 12s'
 
 _STUN_ATTR_HEADER_FMT = '!H H'
 _STUN_ATTR_HEADER_LENGTH = struct.calcsize(_STUN_ATTR_HEADER_FMT)
@@ -15,16 +15,16 @@ _STUN_ATTR_HEADER_LENGTH = struct.calcsize(_STUN_ATTR_HEADER_FMT)
 _STUN_ATTR_FMT = {
     STUN_ATTR_USERNAME: '$',
     STUN_ATTR_MESSAGE_INTEGRITY: '20s',
-    STUN_ATTR_ERROR_CODE: 'L $',
+    STUN_ATTR_ERROR_CODE: 'I $',
     STUN_ATTR_REALM: '$',
     STUN_ATTR_NONCE: '$',
-    STUN_ATTR_XOR_MAPPED_ADDRESS: 'H H L',
+    STUN_ATTR_XOR_MAPPED_ADDRESS: 'H H I',
     STUN_ATTR_SOFTWARE: '$',
-    STUN_ATTR_CHANNEL_NUMBER: 'L',
-    STUN_ATTR_LIFETIME: 'L',
-    STUN_ATTR_XOR_PEER_ADDRESS: 'H H L',
-    STUN_ATTR_XOR_RELAYED_ADDRESS: 'H H L',
-    STUN_ATTR_REQUESTED_TRANSPORT: 'L',
+    STUN_ATTR_CHANNEL_NUMBER: 'I',
+    STUN_ATTR_LIFETIME: 'I',
+    STUN_ATTR_XOR_PEER_ADDRESS: 'H H I',
+    STUN_ATTR_XOR_RELAYED_ADDRESS: 'H H I',
+    STUN_ATTR_REQUESTED_TRANSPORT: 'I',
     STUN_ATTR_DONT_FRAGMENT: '',
 }
 
@@ -43,7 +43,7 @@ def _gen_transaction_id():
     return _TID
 
 def _pack_bigint(l, length=0):
-    h = hex(l)[2:].rstrip('L')
+    h = hex(l)[2:].rstrip('I')
     if length > 0:
         h = h.zfill(length*2)
     return binascii.unhexlify(h)
