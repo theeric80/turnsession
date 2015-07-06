@@ -17,7 +17,8 @@ class TurnSession(object):
         self.password = ''
 
         self.dont_fragment = 1
-        self.allocation_lifetime = STUN_DEFAULT_ALLOCATE_LIFETIME
+
+        self._allocation_lifetime = STUN_DEFAULT_ALLOCATE_LIFETIME
 
         self._relayed_address = ''
         self._relayed_port = 0
@@ -33,7 +34,7 @@ class TurnSession(object):
             self._conn.close()
 
     def _reset(self):
-        self.allocation_lifetime = STUN_DEFAULT_ALLOCATE_LIFETIME
+        self._allocation_lifetime = STUN_DEFAULT_ALLOCATE_LIFETIME
 
         self._relayed_address = ''
         self._relayed_port = 0
@@ -59,15 +60,15 @@ class TurnSession(object):
             _, self._relayed_port, self._relayed_address = xaddr_to_addr(
                     *response.get_attribute(STUN_ATTR_XOR_RELAYED_ADDRESS))
 
-            self.allocation_lifetime = response.get_attribute(
+            self._allocation_lifetime = response.get_attribute(
                     STUN_ATTR_LIFETIME)[0]
 
         return response
 
-    def refresh(self):
-        response = self._send_request(self._build_refresh_request())
+    def refresh(self, lifetime=None):
+        response = self._send_request(self._build_refresh_request(lifetime))
         if response.succeeded():
-            self.allocation_lifetime = response.get_attribute(
+            self._allocation_lifetime = response.get_attribute(
                     STUN_ATTR_LIFETIME)[0]
         return response
 
@@ -111,7 +112,7 @@ class TurnSession(object):
 
     def _build_allocate_request(self):
         req = self._create_stun_request(STUN_METHOD_ALLOCATE)
-        req.add_attribute(STUN_ATTR_LIFETIME, self.allocation_lifetime)
+        req.add_attribute(STUN_ATTR_LIFETIME, self._allocation_lifetime)
         req.add_attribute(
                 STUN_ATTR_REQUESTED_TRANSPORT,
                 STUN_REQUESTED_TRANSPORT_UDP<<24)
@@ -119,9 +120,10 @@ class TurnSession(object):
             req.add_attribute(STUN_ATTR_DONT_FRAGMENT)
         return req
 
-    def _build_refresh_request(self):
+    def _build_refresh_request(self, lifetime=None):
+        _lifetime = self._allocation_lifetime if lifetime is None else lifetime
         req = self._create_stun_request(STUN_METHOD_REFRESH)
-        req.add_attribute(STUN_ATTR_LIFETIME, self.allocation_lifetime)
+        req.add_attribute(STUN_ATTR_LIFETIME, _lifetime)
         return req
 
     def _build_create_permission_request(self):

@@ -35,6 +35,9 @@ def test_session(session):
 
     print 'STUN_METHOD_REFRESH'
     response = session.refresh()
+
+    print 'STUN_METHOD_REFRESH(0)'
+    response = session.refresh(0)
     assert(response.succeeded())
 
 def main():
