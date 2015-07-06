@@ -20,6 +20,9 @@ class TurnSession(object):
 
         self._allocation_lifetime = STUN_DEFAULT_ALLOCATE_LIFETIME
 
+        self._mapped_address = ''
+        self._mapped_port = 0
+
         self._relayed_address = ''
         self._relayed_port = 0
 
@@ -36,11 +39,22 @@ class TurnSession(object):
     def _reset(self):
         self._allocation_lifetime = STUN_DEFAULT_ALLOCATE_LIFETIME
 
+        self._mapped_address = ''
+        self._mapped_port = 0
+
         self._relayed_address = ''
         self._relayed_port = 0
 
         self._realm = ''
         self._nonce = ''
+
+    def binding(self):
+        # TODO: StunSession, STUN_ATTR_MAPPED_ADDRESS
+        response = self._send_request(self._create_binding_request())
+        if response.succeeded():
+            _, self._mapped_port, self._mapped_address= xaddr_to_addr(
+                    *response.get_attribute(STUN_ATTR_XOR_MAPPED_ADDRESS))
+        return response
 
     def connect(self):
         self._conn.connect(
@@ -101,6 +115,10 @@ class TurnSession(object):
         header_len = STUN_HEADER_LENGTH
         header, attributes = buff[:header_len], buff[header_len:]
         return StunResponse(header, attributes)
+
+    def _create_binding_request(self):
+        req = StunRequest(STUN_METHOD_BINDING)
+        return req
 
     def _create_stun_request(self, method):
         req = StunRequest(method)

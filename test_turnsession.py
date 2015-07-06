@@ -17,7 +17,15 @@ def build_ephemeral_credential(ttl, secret, uname):
     _passwd = base64.b64encode(hmac.new(key, msg, hashlib.sha1).digest())
     return _uname, _passwd
 
-def test_session(session):
+def test_stun_session(session):
+    print 'STUN_METHOD_BINDING'
+    response = session.binding()
+    assert(response.succeeded())
+
+    print 'Mapped X-ADDRESS: {0}:{1}'.format(
+            session._mapped_address, session._mapped_port)
+
+def test_turn_session(session):
     print 'STUN_METHOD_ALLOCATE'
     response = session.allocate()
     assert(response.succeeded())
@@ -60,13 +68,14 @@ def main():
         print 'STUN_TRANSPORT_PROTO_UDP'
         session.transport_proto = STUN_TRANSPORT_PROTO_UDP
         session.connect()
-        test_session(session)
+        test_stun_session(session)
+        test_turn_session(session)
 
         print '\nSTUN_TRANSPORT_PROTO_TCP'
         session.close()
         session.transport_proto = STUN_TRANSPORT_PROTO_TCP
         session.connect()
-        test_session(session)
+        test_turn_session(session)
     except:
         traceback.print_exc()
     finally:
