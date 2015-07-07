@@ -10,6 +10,8 @@ class StunSession(object):
         self.server_port = 3478
         self.transport_proto = STUN_TRANSPORT_PROTO_UDP
 
+        self.software = ''
+
         self.username = ''
         self.password = ''
 
@@ -55,6 +57,8 @@ class StunSession(object):
         if self._realm:
             req.add_lt_credential(self.username, self.password)
             req.add_attribute(STUN_ATTR_REALM, self._realm)
+        if self.software:
+            req.add_attribute(STUN_ATTR_SOFTWARE, self.software)
         return req
 
     def _send_request(self, req):

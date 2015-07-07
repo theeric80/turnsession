@@ -53,6 +53,7 @@ def main():
 
     conn = SocketConnection()
     session = TurnSession(conn)
+    session.software = 'test_turnsession'
     session.server_address = jp02_turn_001
     session.server_port = 3478
     session.username = 'ninefingers'
