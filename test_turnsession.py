@@ -75,6 +75,7 @@ def main():
         session.close()
         session.transport_proto = STUN_TRANSPORT_PROTO_TCP
         session.connect()
+        test_stun_session(session)
         test_turn_session(session)
     except:
         traceback.print_exc()

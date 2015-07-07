@@ -2,7 +2,7 @@ from stundef import *
 from stunmsg import StunRequest, StunResponse
 from stunutils import xaddr_to_addr, addr_to_xaddr
 
-class TurnSession(object):
+class StunSession(object):
     def __init__(self, connection):
         object.__init__(self)
 
@@ -10,56 +10,88 @@ class TurnSession(object):
         self.server_port = 3478
         self.transport_proto = STUN_TRANSPORT_PROTO_UDP
 
-        self.peer_address = '127.0.0.1'
-        self.peer_port = 32355
-
         self.username = ''
         self.password = ''
 
-        self.dont_fragment = 1
-
-        self._allocation_lifetime = STUN_DEFAULT_ALLOCATE_LIFETIME
-
         self._mapped_address = ''
         self._mapped_port = 0
-
-        self._relayed_address = ''
-        self._relayed_port = 0
 
         self._realm = ''
         self._nonce = ''
 
         self._conn = connection
 
+    def _reset(self):
+        self._mapped_address = ''
+        self._mapped_port = 0
+
+        self._realm = ''
+        self._nonce = ''
+
     def close(self):
         self._reset()
         if self._conn:
             self._conn.close()
 
-    def _reset(self):
-        self._allocation_lifetime = STUN_DEFAULT_ALLOCATE_LIFETIME
-
-        self._mapped_address = ''
-        self._mapped_port = 0
-
-        self._relayed_address = ''
-        self._relayed_port = 0
-
-        self._realm = ''
-        self._nonce = ''
+    def connect(self):
+        self._conn.connect(
+                (self.server_address, self.server_port),
+                self.transport_proto)
 
     def binding(self):
-        # TODO: StunSession, STUN_ATTR_MAPPED_ADDRESS
-        response = self._send_request(self._create_binding_request())
+        response = self._send_request(self._build_binding_request())
         if response.succeeded():
             _, self._mapped_port, self._mapped_address= xaddr_to_addr(
                     *response.get_attribute(STUN_ATTR_XOR_MAPPED_ADDRESS))
         return response
 
-    def connect(self):
-        self._conn.connect(
-                (self.server_address, self.server_port),
-                self.transport_proto)
+    def _build_binding_request(self):
+        req = self._create_stun_request(STUN_METHOD_BINDING)
+        return req
+
+    def _create_stun_request(self, method):
+        req = StunRequest(method)
+        req.add_attribute(STUN_ATTR_NONCE, self._nonce)
+        if self._realm:
+            req.add_lt_credential(self.username, self.password)
+            req.add_attribute(STUN_ATTR_REALM, self._realm)
+        return req
+
+    def _send_request(self, req):
+        # TODO: logging
+        self._conn.send(req.pack())
+        response = self._recv_response()
+        if response.failed():
+            print ('[StunSession] _send_request Failed. '
+                   'Error = {0}, {1}'.format(*response.error()))
+        return response
+
+    def _recv_response(self):
+        buff = self._conn.recv()
+        header_len = STUN_HEADER_LENGTH
+        header, attributes = buff[:header_len], buff[header_len:]
+        return StunResponse(header, attributes)
+
+class TurnSession(StunSession):
+    def __init__(self, connection):
+        StunSession.__init__(self, connection)
+
+        self.peer_address = '127.0.0.1'
+        self.peer_port = 32355
+
+        self.dont_fragment = 1
+
+        self._allocation_lifetime = STUN_DEFAULT_ALLOCATE_LIFETIME
+
+        self._relayed_address = ''
+        self._relayed_port = 0
+
+    def _reset(self):
+        super(TurnSession, self)._reset()
+        self._allocation_lifetime = STUN_DEFAULT_ALLOCATE_LIFETIME
+
+        self._relayed_address = ''
+        self._relayed_port = 0
 
     def allocate(self):
         response = self._send_request(self._build_allocate_request())
@@ -100,33 +132,6 @@ class TurnSession(object):
         pass
     def recv_indication(self):
         pass
-
-    def _send_request(self, req):
-        # TODO: logging
-        self._conn.send(req.pack())
-        response = self._recv_response()
-        if response.failed():
-            print ('[TurnSession] _send_request Failed. '
-                   'Error = {0}, {1}'.format(*response.error()))
-        return response
-
-    def _recv_response(self):
-        buff = self._conn.recv()
-        header_len = STUN_HEADER_LENGTH
-        header, attributes = buff[:header_len], buff[header_len:]
-        return StunResponse(header, attributes)
-
-    def _create_binding_request(self):
-        req = StunRequest(STUN_METHOD_BINDING)
-        return req
-
-    def _create_stun_request(self, method):
-        req = StunRequest(method)
-        req.add_attribute(STUN_ATTR_NONCE, self._nonce)
-        if self._realm:
-            req.add_lt_credential(self.username, self.password)
-            req.add_attribute(STUN_ATTR_REALM, self._realm)
-        return req
 
     def _build_allocate_request(self):
         req = self._create_stun_request(STUN_METHOD_ALLOCATE)
